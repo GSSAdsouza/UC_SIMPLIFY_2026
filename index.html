@@ -1,0 +1,469 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simplify 2026 - Conference Agenda</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0f0f0f; color: #e0e0e0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.5; padding: 32px 16px;
+  }
+  .container { max-width: 1200px; margin: 0 auto; }
+
+  /* Header */
+  .header { text-align: center; margin-bottom: 32px; }
+  .header h1 { font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+  .header .subtitle { font-size: 13px; color: #888; }
+
+  /* Tab bar */
+  .tab-bar {
+    display: flex; gap: 24px; border-bottom: 1px solid #2a2a2a;
+    margin-bottom: 24px; padding-bottom: 0;
+  }
+  .tab-bar button {
+    background: none; border: none; border-bottom: 2px solid transparent;
+    color: #666; font-size: 15px; font-weight: 600; padding: 10px 4px;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .tab-bar button:hover { color: #aaa; }
+  .tab-bar button.active { color: #fff; border-bottom-color: #3b82f6; }
+
+  /* Grid */
+  .day-grid { display: none; }
+  .day-grid.active { display: block; }
+  .schedule-grid {
+    display: grid;
+    grid-template-columns: 110px 1fr 1fr 1fr 1fr;
+    gap: 6px;
+  }
+  .grid-header {
+    font-size: 12px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.5px; color: #888; padding: 10px 8px;
+    border-bottom: 1px solid #2a2a2a; text-align: center;
+  }
+  .grid-header:first-child { text-align: left; }
+
+  /* Time column */
+  .time-cell {
+    font-size: 12px; color: #888; padding: 14px 8px 14px 0;
+    display: flex; align-items: flex-start; white-space: nowrap;
+  }
+
+  /* Session tile */
+  .session-tile {
+    background: #1a1a1a; border-radius: 8px; padding: 12px 14px;
+    border-left: 3px solid #666; cursor: pointer;
+    transition: background 0.15s; position: relative; min-height: 72px;
+  }
+  .session-tile:hover { background: #222; }
+  .session-tile .title {
+    font-size: 13px; font-weight: 600; color: #fff;
+    margin-bottom: 4px; line-height: 1.35;
+  }
+  .session-tile .presenter {
+    font-size: 12px; color: #ccc; margin-bottom: 2px;
+  }
+  .session-tile .length {
+    font-size: 11px; color: #666;
+  }
+  .session-tile .tooltip {
+    display: none; position: absolute; left: 0; right: 0; top: 100%;
+    margin-top: 4px; background: #222; border: 1px solid #333;
+    border-radius: 6px; padding: 10px 12px; font-size: 12px;
+    color: #aaa; line-height: 1.45; z-index: 10; max-width: 360px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  }
+  .session-tile:hover .tooltip { display: block; }
+
+  /* Track colors */
+  .track-ni    { border-left-color: #3b82f6; }
+  .track-ci    { border-left-color: #a855f7; }
+  .track-main  { border-left-color: #f59e0b; }
+
+  /* Break row */
+  .break-row {
+    grid-column: 2 / -1; background: #1f1f1f; border-radius: 6px;
+    padding: 10px 16px; text-align: center; font-size: 13px;
+    color: #9ca3af; font-weight: 500;
+  }
+
+  /* Empty cell */
+  .empty-cell {
+    border: 1px dashed #2a2a2a; border-radius: 8px;
+    min-height: 72px;
+  }
+
+  /* Divider */
+  .divider {
+    border: none; border-top: 1px solid #2a2a2a;
+    margin: 40px 0;
+  }
+
+  /* Workshop section */
+  .workshop-header { text-align: center; margin-bottom: 24px; }
+  .workshop-header h2 { font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+  .workshop-header .ws-subtitle { font-size: 13px; color: #888; }
+  .workshop-grid {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+  }
+  .track-card {
+    background: #1a1a1a; border: 1px solid #2a2a2a;
+    border-radius: 12px; padding: 20px;
+  }
+  .track-card .track-name {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; color: #888; margin-bottom: 6px;
+  }
+  .track-card .track-line {
+    height: 2px; width: 40px; margin-bottom: 16px;
+  }
+  .track-financial .track-line { background: #22c55e; }
+  .track-operations .track-line { background: #f59e0b; }
+  .track-technical .track-line { background: #3b82f6; }
+  .track-card .ws-session { margin-bottom: 14px; }
+  .track-card .ws-session:last-child { margin-bottom: 0; }
+  .track-card .ws-time { font-size: 12px; color: #666; margin-bottom: 2px; }
+  .track-card .ws-title { font-size: 13px; font-weight: 600; color: #fff; line-height: 1.35; }
+  .track-card .ws-presenter { font-size: 12px; color: #888; }
+
+  /* Footer */
+  .footer {
+    margin-top: 40px; text-align: center; font-size: 12px; color: #666;
+    border-top: 1px solid #2a2a2a; padding-top: 20px;
+  }
+  .footer .verify-pass { color: #22c55e; }
+  .footer .verify-fail { color: #ef4444; }
+
+  @media (max-width: 900px) {
+    .schedule-grid { grid-template-columns: 80px 1fr 1fr 1fr 1fr; gap: 4px; }
+    .workshop-grid { grid-template-columns: 1fr; }
+    .session-tile { padding: 8px 10px; }
+    .session-tile .title { font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>Simplify 2026 &mdash; Conference Agenda</h1>
+    <div class="subtitle">Last generated Aug 10, 2026 2:20 PM &middot; 28 sessions across 4 rooms &middot; 2 conference days</div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="active" onclick="showDay('tuesday')">Tuesday, Oct 13</button>
+    <button onclick="showDay('wednesday')">Wednesday, Oct 14</button>
+  </div>
+
+  <div id="grid-tuesday" class="day-grid active">
+    <div class="schedule-grid">
+      <div class="grid-header">Time</div>
+      <div class="grid-header">Main Stage</div>
+      <div class="grid-header">Room A</div>
+      <div class="grid-header">Room B</div>
+      <div class="grid-header">Room C</div>
+      <div class="time-cell">8:00 - 9:15</div>
+      <div class="session-tile track-main">
+        <div class="title">AI KeyNote</div>
+        <div class="presenter">Trent</div>
+        
+        
+      </div>
+      <div class="empty-cell"></div>
+      <div class="empty-cell"></div>
+      <div class="empty-cell"></div>
+      <div class="time-cell">9:30 - 10:30</div>
+      <div class="session-tile track-main">
+        <div class="title">Game Day Experience</div>
+        <div class="presenter">Game Day Crew</div>
+        
+        
+      </div>
+      <div class="empty-cell"></div>
+      <div class="empty-cell"></div>
+      <div class="empty-cell"></div>
+      <div class="time-cell">10:45 - 11:30</div>
+      <div class="empty-cell"></div>
+      <div class="session-tile track-ci">
+        <div class="title">Features You are Paying for But Not Using</div>
+        <div class="presenter">Langley</div>
+        <div class="length">45 mins</div>
+        <div class="tooltip">Most companies go live using a fraction of what Global Shop Solutions can do - and stay there for years. This session is a guided tour of the most powerful and most overlooked features in the system, ...</div>
+      </div>
+      <div class="session-tile track-ci">
+        <div class="title">Purchasing Principles and Best Practices with Genii Assist</div>
+        <div class="presenter">Matthew</div>
+        <div class="length">45 mins</div>
+        <div class="tooltip">Learn details about the new Automated Purchasing core screen and how the different purchasing features available interact with MRP. We will also cover purchasing action required which allows you to id...</div>
+      </div>
+      <div class="session-tile track-ni">
+        <div class="title">The Executive Advantage: Leading Your Team to a Successful Launch   </div>
+        <div class="presenter">Tracey Pappas</div>
+        
+        <div class="tooltip">Your implementation doesn&#39;t succeed or fail at the keyboard — it succeeds or fails in the boardroom. This session makes the case for why executive involvement is the single greatest predictor of imple...</div>
+      </div>
+      <div class="time-cell">11:30 - 1:00</div>
+      <div class="break-row">Lunch &amp; Expo</div>
+      <div class="time-cell">1:00 - 1:45</div>
+      <div class="empty-cell"></div>
+      <div class="session-tile track-ci">
+        <div class="title">Using Your ERP for Strategic Planning: From Operational Tool to Competitive Advantage</div>
+        <div class="presenter">Mark</div>
+        <div class="length">45 mins</div>
+        <div class="tooltip">At some point, the goal shifts from running the system to running the business with the system. This session is for leaders at companies that are ready to use Global Shop Solutions not just as an oper...</div>
+      </div>
+      <div class="session-tile track-ci">
+        <div class="title">Paperless Manufacturing: Smarter, Faster, Connected</div>
+        <div class="presenter">Toph</div>
+        <div class="length">45 mins</div>
+        <div class="tooltip">Learn best practices for GS Mobile,  Barcoding, and RFID in a paper(less) environment.</div>
+      </div>
+      <div class="session-tile track-ni">
+        <div class="title">Keep the Momentum: Change Management Strategies That Actually Work   </div>
+        <div class="presenter">Jill Long, Amy Cox, Rani</div>
+        
+        <div class="tooltip">Long implementations test even the most committed teams. Fatigue, resistance, and shifting priorities can quietly derail progress long before go-live. In this session, you&#39;ll explore proven strategies...</div>
+      </div>
+      <div class="time-cell">2:00 - 2:45</div>
+      <div class="empty-cell"></div>
+      <div class="session-tile track-ci">
+        <div class="title">Turning Your ERP Data into Decisions: Genii Pulse on Dashboards, KPIs and Reporting That Actually Get Used</div>
+        <div class="presenter">Toph</div>
+        <div class="length">45 mins</div>
+        <div class="tooltip">Global Shop Solutions is generating a continuous stream of operational data - but is your leadership team actually using it? This session is for companies that want to move beyond basic reports and bu...</div>
+      </div>
+      <div class="session-tile track-ci">
+        <div class="title">Production Scheduling; Foundations and beyond</div>
+        <div class="presenter">Tristan</div>
+        <div class="length">45 mins</div>
+        <div class="tooltip">Discuss APS Prerequisites, understand the logic of the schedule, and how to manipulate it where necessary to get the most of your Advanced Planning &amp; Scheduling system.</div>
+      </div>
+      <div class="session-tile track-ni">
+        <div class="title">The Blueprint: Implementation Best Practices from the Experts Who&#39;ve Seen It All</div>
+        <div class="presenter">Nicole, Autumn B, Kylie Hambleton, Jarrett Smith</div>
+        
+        <div class="tooltip">What separates implementations that launch on time and on target from those that don&#39;t? Hint: it&#39;s rarely technical. In this session, Global Shop&#39;s most experienced project managers and implementation...</div>
+      </div>
+      <div class="time-cell">3:00 - 3:45</div>
+      <div class="empty-cell"></div>
+      <div class="session-tile track-ci">
+        <div class="title">Modern IT Security: Navigating FedRAMP, CMMC &amp; Cybersecurity Compliance</div>
+        <div class="presenter">External</div>
+        <div class="length">45 mins</div>
+        
+      </div>
+      <div class="session-tile track-ci">
+        <div class="title">Inventory Control and Shop Floor Best Practices</div>
+        <div class="presenter">Daniel Santos</div>
+        <div class="length">45 mins</div>
+        <div class="tooltip">Learn the best ways to control or automate your inventory! Tips and tricks for options to set as well as reports to look at for inventory validation. Learn about cycle counting and inventory counts as...</div>
+      </div>
+      <div class="session-tile track-ni">
+        <div class="title">Lessons from the Trenches: A Project Manager Panel</div>
+        <div class="presenter">Steve Garrett</div>
+        
+        <div class="tooltip">Hear directly from people who&#39;ve been exactly where you are right now. This customer panel brings together project managers who led successful Global Shop implementations and are ready to tell you wha...</div>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="grid-wednesday" class="day-grid">
+    <div class="schedule-grid">
+      <div class="grid-header">Time</div>
+      <div class="grid-header">Main Stage</div>
+      <div class="grid-header">Room A</div>
+      <div class="grid-header">Room B</div>
+      <div class="grid-header">Room C</div>
+      <div class="time-cell">9:30 - 10:30</div>
+      <div class="empty-cell"></div>
+      <div class="session-tile track-ci">
+        <div class="title">AI Customer Panel</div>
+        <div class="presenter">Ashwin</div>
+        <div class="length">60 mins</div>
+        
+      </div>
+      <div class="session-tile track-ci">
+        <div class="title">Common Missed Opportunities - Accounting</div>
+        <div class="presenter">Joddi</div>
+        <div class="length">60 mins</div>
+        <div class="tooltip">High level missed opportunities many companies make when it comes to the Accouting Department and Financial Opportunities</div>
+      </div>
+      <div class="session-tile track-ni">
+        <div class="title">From Overwhelmed to Organized: Build a Training Plan that Sticks</div>
+        <div class="presenter">Jill Long, Lauren Bisel</div>
+        
+        <div class="tooltip">&quot;Just go practice in the system&quot; isn&#39;t a training plan. This hands-on workshop gives implementation leaders the tools and frameworks to design training that sticks — across different roles, learning s...</div>
+      </div>
+      <div class="time-cell">10:45 - 11:30</div>
+      <div class="empty-cell"></div>
+      <div class="session-tile track-ci">
+        <div class="title">Your ERP Health Check: Auditing Processes and Closing the Gaps - NOTE MAY BE SWITCHING TIMES WITH AI CUSTOMER PANEL CLASS</div>
+        <div class="presenter">Mark</div>
+        <div class="length">45 mins</div>
+        <div class="tooltip">Time has a way of introducing drift. Workarounds get invented, steps get skipped, and off-system habits quietly become the norm. This session walks you through how to conduct a practical internal audi...</div>
+      </div>
+      <div class="session-tile track-ci">
+        <div class="title">Accounting Best Practices</div>
+        <div class="presenter">Rodrigue</div>
+        <div class="length">45 mins</div>
+        <div class="tooltip">Together let&#39;s review some recommendations on how to steamline daily tasks and month end processes, all with a focus on the Accounting modules</div>
+      </div>
+      <div class="session-tile track-ni">
+        <div class="title">Meet Genii: How AI is Changing Implementation</div>
+        <div class="presenter">Autumn B, Brady Stevens</div>
+        
+        <div class="tooltip">AI isn&#39;t coming to ERP — it&#39;s already here. This session introduces Genii, Global Shop&#39;s growing suite of AI-powered tools designed to make every phase of your implementation smarter, faster, and less...</div>
+      </div>
+      <div class="time-cell">11:30 - 1:00</div>
+      <div class="break-row">Lunch &amp; Expo</div>
+      <div class="time-cell">1:00 - 1:45</div>
+      <div class="empty-cell"></div>
+      <div class="session-tile track-ci">
+        <div class="title">From One Year to Twenty: A Customer Panel on Growing with Global Shop</div>
+        <div class="presenter">Langley</div>
+        <div class="length">45 mins</div>
+        <div class="tooltip">What does it actually look like to grow with an ERP system over time? This extended panel brings together Global Shop customers at very different stages of their journey - companies that went live rec...</div>
+      </div>
+      <div class="session-tile track-ci">
+        <div class="title">Tax Strategies (EXTERNAL)</div>
+        <div class="presenter">Irma (External)</div>
+        <div class="length">45 mins</div>
+        <div class="tooltip">Join us to learn some tax strategies Companies can take advantage of</div>
+      </div>
+      <div class="session-tile track-ni">
+        <div class="title">Hypercare: Your Safety Net for the Most Critical Weeks Post-Launch</div>
+        <div class="presenter">Nicole, Tracey Pappas</div>
+        
+        <div class="tooltip">No matter how well you&#39;ve prepared, the period immediately following go-live is unlike any other. The volume of activity, the pace of change, and the learning curve for real-world use can make this wi...</div>
+      </div>
+      <div class="time-cell">2:00 - 2:45</div>
+      <div class="empty-cell"></div>
+      <div class="session-tile track-ci">
+        <div class="title">New Employees, Existing System: Building a Training Program for a Live Environment</div>
+        <div class="presenter">Kim and Joddi</div>
+        <div class="length">45 mins</div>
+        <div class="tooltip">Onboarding new team members into a fully live ERP is a fundamentally different challenge than initial implementation training - and most companies are making it up as they go. This session gives HR le...</div>
+      </div>
+      <div class="session-tile track-ci">
+        <div class="title">Strategic Planning</div>
+        <div class="presenter">Joddi</div>
+        <div class="length">45 mins</div>
+        <div class="tooltip">From Vision to Action: A Practical Strategic Planning Playbook for Manufacturers
+
+Learn a repeatable framework for building a strategic plan that actually sticks - from Mission, Vision, and Values thr...</div>
+      </div>
+      <div class="session-tile track-ni">
+        <div class="title">From Go-Live to Thriving: Customers Share What the Other Side Looks Like</div>
+        <div class="presenter">Steve Garrett</div>
+        
+        <div class="tooltip">You&#39;re deep in implementation and wondering what it&#39;s going to feel like when you get to the other side. This closing session is for you. We&#39;ll hear from customers who have successfully gone live with...</div>
+      </div>
+      <div class="time-cell">3:00 - 4:30</div>
+      <div class="session-tile track-main">
+        <div class="title">What&#39;s Cooking</div>
+        <div class="presenter">Trent</div>
+        <div class="length">90 mins</div>
+        
+      </div>
+      <div class="empty-cell"></div>
+      <div class="empty-cell"></div>
+      <div class="empty-cell"></div>
+
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <div class="workshop-header">
+    <h2>Thursday, October 15 &mdash; Post-Conference Workshops</h2>
+    <div class="ws-subtitle">GSS Headquarters &middot; Separate registration required</div>
+  </div>
+
+  <div class="workshop-grid">
+    <div class="track-card track-financial">
+      <div class="track-name">Financial</div>
+      <div class="track-line"></div>
+      <div class="ws-session">
+        <div class="ws-time">9:00 - 9:45</div>
+        <div class="ws-title">Advanced Accounting Discussions</div>
+        <div class="ws-presenter">Joddi</div>
+      </div>
+      <div class="ws-session">
+        <div class="ws-time">10:00 - 10:45</div>
+        <div class="ws-title">Inventory Reconciliation</div>
+        <div class="ws-presenter">Rodrigue</div>
+      </div>
+      <div class="ws-session">
+        <div class="ws-time">11:00 - 11:45</div>
+        <div class="ws-title">Put it in Reverse - Accounting</div>
+        <div class="ws-presenter">Isabella</div>
+      </div>
+      <div class="ws-session">
+        <div class="ws-time">1:00 - 1:45</div>
+        <div class="ws-title">Financial Statement - Format</div>
+        <div class="ws-presenter">Joddi</div>
+      </div>
+    </div>
+    <div class="track-card track-operations">
+      <div class="track-name">Operations</div>
+      <div class="track-line"></div>
+      <div class="ws-session">
+        <div class="ws-time">9:00 - 9:45</div>
+        <div class="ws-title">Inventory Control Best Practices</div>
+        <div class="ws-presenter">Langley</div>
+      </div>
+      <div class="ws-session">
+        <div class="ws-time">10:00 - 10:45</div>
+        <div class="ws-title">Production Scheduling</div>
+        <div class="ws-presenter">Tristan</div>
+      </div>
+      <div class="ws-session">
+        <div class="ws-time">11:00 - 11:45</div>
+        <div class="ws-title">Operations Manager Checklist</div>
+        <div class="ws-presenter">Mathew</div>
+      </div>
+      <div class="ws-session">
+        <div class="ws-time">1:00 - 1:45</div>
+        <div class="ws-title">Put it in Reverse</div>
+        <div class="ws-presenter">Daniel</div>
+      </div>
+    </div>
+    <div class="track-card track-technical">
+      <div class="track-name">Technical</div>
+      <div class="track-line"></div>
+      <div class="ws-session">
+        <div class="ws-time">9:00 - 11:45</div>
+        <div class="ws-title">Dashboard Designer</div>
+        <div class="ws-presenter">Toph and Bix</div>
+      </div>
+      <div class="ws-session">
+        <div class="ws-time">1:00 - 1:45</div>
+        <div class="ws-title">Report Designer</div>
+        <div class="ws-presenter">Ryan Young</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    <div><span class="verify-pass">&#10003; All checks passed</span></div>
+    <div style="margin-top: 6px;">Generated from NI (9 sessions) + CI (29 sessions)</div>
+  </div>
+</div>
+
+<script>
+function showDay(day) {
+  document.querySelectorAll('.day-grid').forEach(g => g.classList.remove('active'));
+  document.querySelectorAll('.tab-bar button').forEach(b => b.classList.remove('active'));
+  document.getElementById('grid-' + day).classList.add('active');
+  const idx = day === 'tuesday' ? 0 : 1;
+  document.querySelectorAll('.tab-bar button')[idx].classList.add('active');
+}
+</script>
+</body>
+</html>
+
