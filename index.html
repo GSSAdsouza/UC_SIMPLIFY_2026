@@ -157,14 +157,13 @@
 <div class="container">
   <div class="header">
     <h1>Simplify 2026 &mdash; Conference Agenda</h1>
-    <div class="subtitle">Last generated Oct 1, 2026 4:50 PM &middot; 29 conference sessions &middot; 10 workshops &middot; Mon-Thu</div>
+    <div class="subtitle">Last generated Oct 1, 2026 5:01 PM &middot; 29 conference sessions &middot; 10 Thursday workshops</div>
   </div>
 
   <div class="tab-bar">
     <button class="active" onclick="showDay('monday')">Monday, Oct 12</button>
     <button onclick="showDay('tuesday')">Tuesday, Oct 13</button>
     <button onclick="showDay('wednesday')">Wednesday, Oct 14</button>
-    <button onclick="showDay('thursday')">Thursday, Oct 15</button>
   </div>
 
   <div id="grid-monday" class="day-grid active">
@@ -448,22 +447,14 @@
     </div>
   </div>
 
-  <div id="grid-thursday" class="day-grid">
-    <div class="schedule-grid">
-      <div class="grid-header">Time</div>
-      <div class="grid-header">Main Stage</div>
-      <div class="grid-header">Room 1</div>
-      <div class="grid-header">Room 2</div>
-      <div class="grid-header">Room 3</div>
-      <div class="time-cell">8:00 - 9:00</div>
-      <div class="break-row">Breakfast - GSS HQ</div>
+  <hr class="divider">
 
-    </div>
-    <div class="workshop-header" style="margin-top:32px;">
-      <h2>Post-Conference Workshops</h2>
-      <div class="ws-subtitle">GSS Headquarters &middot; Separate registration required</div>
-    </div>
-    <div class="workshop-grid">
+  <div class="workshop-header">
+    <h2>Thursday, October 15 &mdash; Post-Conference Workshops</h2>
+    <div class="ws-subtitle">GSS Headquarters &middot; Breakfast 8:00 - 9:00 &middot; Separate registration required</div>
+  </div>
+
+  <div class="workshop-grid">
     <div class="track-card track-financial">
       <div class="track-name">Training Room B</div>
       <div class="track-line"></div>
@@ -531,7 +522,6 @@
       <div class="track-line"></div>
     </div>
 
-    </div>
   </div>
 
   <div class="footer">
@@ -545,7 +535,7 @@ function showDay(day) {
   document.querySelectorAll('.day-grid').forEach(g => g.classList.remove('active'));
   document.querySelectorAll('.tab-bar button').forEach(b => b.classList.remove('active'));
   document.getElementById('grid-' + day).classList.add('active');
-  const order = ['monday','tuesday','wednesday','thursday'];
+  const order = ['monday','tuesday','wednesday'];
   const idx = order.indexOf(day);
   document.querySelectorAll('.tab-bar button')[idx].classList.add('active');
 }
